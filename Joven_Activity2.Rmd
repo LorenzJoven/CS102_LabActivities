@@ -1,0 +1,56 @@
+---
+title: "Activity#2"
+output:
+  html_document:
+    df_print: paged
+date: "2024-02-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(polite)
+library(rvest)
+library(dplyr)
+
+url_base <- "https://www.imdb.com/title/tt0245429/reviews?ref_=tt_urv"
+
+names <- c()
+date <- c()
+rating <- c()
+reviews <- c()
+content <- c()
+
+for (page in 1:ceiling(300 / 25)) {
+  url <- paste0(url_base, "&page=", page)
+  session <- bow(url, user_agent = "Educational")
+  page_content <- scrape(session)
+  
+  names <- c(names, page_content %>% html_nodes(".display-name-link") %>% html_text())
+  date <- c(date, page_content %>% html_nodes("span.review-date") %>% html_text())
+  rating <- c(rating, page_content %>% html_nodes("span.rating-other-user-rating") %>% html_text())
+  reviews <- c(reviews, page_content %>% html_nodes("a.title") %>% html_text())
+  content <- c(content, page_content %>% html_nodes("div.text.show-more__control") %>% html_text())
+  
+  if (length(names) >= 300) {
+    break
+  }
+}
+
+df <- data.frame(
+  Name = names[1:300],
+  Date = date[1:300],
+  Rating = rating[1:300],
+  Reviews = reviews[1:300],
+  Content = content[1:300]
+)
+
+head(df)
+
+
+
+
+```
+
+
+
