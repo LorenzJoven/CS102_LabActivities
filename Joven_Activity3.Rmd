@@ -1,0 +1,99 @@
+---
+title: "Activity#2"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+date: "2024-02-13"
+---
+
+```{r}
+library(polite)
+library(rvest)
+library(dplyr)
+library(readr)
+
+scrape_imdb_reviews <- function(urls) {
+  dfs <- list()
+
+  for (i in seq_along(urls)) {
+    names1 <- c()
+    date1 <- c()
+    rating1 <- c()
+    reviews1 <- c()
+    content1 <- c()
+
+    pagination_key <- ""
+    
+    while (TRUE) {
+      url_base <- urls[i]
+      url <- sprintf(url_base, pagination_key)
+      session <- bow(url, user_agent = "Educational")
+      page_content <- scrape(session)
+      
+      names1 <- c(names1, page_content %>% html_nodes(".display-name-link") %>% html_text())
+      date1 <- c(date1, page_content %>% html_nodes("span.review-date") %>% html_text())
+      rating1 <- c(rating1, page_content %>% html_nodes("span.rating-other-user-rating > span") %>% html_text())
+      reviews1 <- c(reviews1, page_content %>% html_nodes("a.title") %>% html_text())
+      content1 <- c(content1, page_content %>% html_nodes("div.text.show-more__control") %>% html_text())
+      
+      # Extract pagination key from page content
+      pagination_key <- page_content %>% html_nodes(".load-more-data") %>% html_attr("data-key")
+      
+      if (length(names1) >= 300 || is.null(pagination_key)) {
+        break
+      }
+    }
+
+    df <- data.frame(
+      Name = names1[1:300],
+      Date = date1[1:300],
+      Rating = rating1[1:300],
+      Reviews = reviews1[1:300],
+      Content = content1[1:300]
+    )
+
+    dfs[[i]] <- df
+  }
+
+  return(dfs)
+}
+
+# List of URLs
+urls <- c(
+  "https://www.imdb.com/title/tt0245429/reviews/_ajax?ref_=undefined&paginationKey=%s",
+  "https://www.imdb.com/title/tt0114369/reviews/_ajax?ref_=undefined&paginationKey=%s",
+  "https://www.imdb.com/title/tt0435761/reviews/_ajax?ref_=undefined&paginationKey=%s",
+  "https://www.imdb.com/title/tt2380307/reviews/_ajax?ref_=undefined&paginationKey=%s",
+  "https://www.imdb.com/title/tt0112573/reviews/_ajax?ref_=undefined&paginationKey=%s",
+  "https://www.imdb.com/title/tt0119698/reviews/_ajax?ref_=undefined&paginationKey=%s",
+  "https://www.imdb.com/title/tt0180093/reviews/_ajax?ref_=undefined&paginationKey=%s",
+  "https://www.imdb.com/title/tt0086190/reviews/_ajax?ref_=undefined&paginationKey=%s",
+  "https://www.imdb.com/title/tt0105236/reviews/_ajax?ref_=undefined&paginationKey=%s",
+  "https://www.imdb.com/title/tt0095016/reviews/_ajax?ref_=undefined&paginationKey=%s"
+)
+
+# Scrape reviews
+dfs <- scrape_imdb_reviews(urls)
+
+# Naming the dataframes df1 to df10
+for (i in seq_along(dfs)) {
+  assign(paste0("df", i), dfs[[i]])
+}
+
+
+
+# Combine all dataframes into one
+combined_df <- bind_rows(dfs)
+
+# View the combined dataframe
+View(combined_df)
+
+# Combine all dataframes into one
+combined_df <- bind_rows(dfs)
+
+# Write the combined dataframe to a CSV file
+write.csv(combined_df, "imdb_reviews.csv", row.names = FALSE)
+i
+
+```
